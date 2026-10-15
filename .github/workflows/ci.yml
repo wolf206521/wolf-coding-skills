@@ -1,0 +1,18 @@
+# 能力仓库自身 CI：校验 Skills 结构、frontmatter、目录名与文档死链
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: 校验技能与文档
+        run: node scripts/validate-skills.mjs

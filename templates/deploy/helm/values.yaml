@@ -1,0 +1,71 @@
+# P-ERP 二期 K8s Helm values 骨架。
+# 说明：一期用 Compose；进入二期（多机/高可用）后按此结构拆分服务、接入 Argo CD。
+# 密钥统一由外部 Secret（Vault/SOPS）注入，禁止写死到 values。
+
+global:
+  imageRegistry: "<REGISTRY>"       # 镜像仓库，如 harbor.internal.example.com/p-erp
+  imagePullSecrets: []
+  env: "prod"                        # dev | staging | prod
+
+# 各服务副本数与资源配置（按需扩展）
+erpServer:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: erp-server
+    tag: "1.0.0"
+  resources:
+    requests: { cpu: "500m", memory: "1Gi" }
+    limits: { cpu: "2", memory: "4Gi" }
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 8
+    targetCPUUtilizationPercentage: 70
+
+aiService:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: ai-service
+    tag: "1.0.0"
+  resources:
+    requests: { cpu: "250m", memory: "512Mi" }
+    limits: { cpu: "4", memory: "8Gi" }   # LLM 推理/向量检索 CPU 密集
+
+gateway:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: gateway
+    tag: "1.0.0"
+
+# 数据面（生产建议托管服务或独立高可用；此处为骨架）
+postgres:
+  enabled: true
+  image: "pgvector/pgvector:pg16"
+  storage: "100Gi"
+redis:
+  enabled: true
+  image: "redis:7.2-alpine"
+
+# 可观测（可选，接 OTel）
+observability:
+  enabled: true
+  otelCollectorEndpoint: "http://otel-collector:4317"
+
+ingress:
+  enabled: true
+  className: nginx
+  hosts:
+    - host: erp.example.com
+    - host: customer.example.com
+    - host: supplier.example.com
+    - host: outsourcing.example.com
+  tls:
+    - secretName: p-erp-tls
+      hosts:
+        - erp.example.com
+        - customer.example.com
+        - supplier.example.com
+        - outsourcing.example.com

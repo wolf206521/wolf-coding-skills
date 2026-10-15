@@ -1,0 +1,36 @@
+{
+  "name": "@wolf/customer-mini",
+  "private": true,
+  "version": "0.1.0",
+  "description": "客户侧微信小程序（Taro 4 + React + NutUI）",
+  "scripts": {
+    "dev:weapp": "taro build --type weapp --watch",
+    "build:weapp": "taro build --type weapp",
+    "lint": "eslint src --ext .ts,.tsx",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@wolf/api-client": "workspace:*",
+    "@wolf/domain-types": "workspace:*",
+    "@tarojs/components": "^4.0.0",
+    "@tarojs/helper": "^4.0.0",
+    "@tarojs/plugin-platform-weapp": "^4.0.0",
+    "@tarojs/react": "^4.0.0",
+    "@tarojs/runtime": "^4.0.0",
+    "@tarojs/shared": "^4.0.0",
+    "@tarojs/taro": "^4.0.0",
+    "@nutui/nutui-react-taro": "^2.6.0",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0"
+  },
+  "devDependencies": {
+    "@tarojs/cli": "^4.0.0",
+    "@tarojs/webpack5-runner": "^4.0.0",
+    "babel-preset-taro": "^4.0.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0",
+    "eslint": "^8.57.0",
+    "prettier": "^3.3.0"
+  }
+}

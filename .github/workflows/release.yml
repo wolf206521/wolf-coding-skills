@@ -1,0 +1,35 @@
+# 能力仓库自身 Release：打 tag 触发 → 校验 → 生成 CHANGELOG 简版 → 创建 GitHub Release
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: 校验技能与文档
+        run: node scripts/validate-skills.mjs
+      - name: 生成变更说明
+        id: changelog
+        run: |
+          # 简化版：汇总自上一 tag 以来的 Conventional Commits
+          {
+            echo "## Changes in ${{ github.ref_name }}"
+            echo ""
+            git log --pretty=format:"- %s" "$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo '')"..HEAD || echo "- initial release"
+          } > CHANGELOG.md
+      - name: 创建 Release
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: CHANGELOG.md
+          generate_release_notes: true

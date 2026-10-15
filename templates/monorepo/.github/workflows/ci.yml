@@ -1,0 +1,33 @@
+# 目标项目（P-ERP）Monorepo 前端 CI 骨架（复制到目标项目 .github/workflows/）
+name: CI (frontend)
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [erp-console, customer-portal, supplier-portal, outsourcing-portal, customer-mini]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Lint
+        run: pnpm --filter @wolf/${{ matrix.app }} lint
+      - name: Typecheck
+        run: pnpm --filter @wolf/${{ matrix.app }} typecheck
+      - name: Test
+        run: pnpm --filter @wolf/${{ matrix.app }} test
+      - name: Build
+        run: pnpm --filter @wolf/${{ matrix.app }} build

@@ -1,0 +1,48 @@
+# 依赖与构建产物
+node_modules/
+dist/
+build/
+.next/
+.turbo/
+*.tsbuildinfo
+
+# 包管理器
+pnpm-lock.yaml.bak
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-store/
+
+# 环境与密钥（严禁入库）
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.jks
+secrets/
+credentials.json
+
+# 操作系统 / 编辑器
+.DS_Store
+Thumbs.db
+Desktop.ini
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# 日志与临时
+*.log
+logs/
+tmp/
+temp/
+coverage/
+.cache/
+
+# 运行时数据
+data/
+volumes/
+*.dump
+*.sql.gz

@@ -1,0 +1,134 @@
+# P-ERP 一期单机/双机生产起步编排（复制到目标项目 platform/compose/ 后按需修改镜像与密钥）
+# 用法： docker compose up -d
+# 说明： 生产环境请将镜像 tag 替换为发布 tag（如 1.0.0），并将所有 <CHANGE_ME> 改为真实值。
+#        密钥请勿写入本文件，使用 .env 注入（已在 .gitignore 排除 .env）。
+
+name: p-erp
+
+services:
+  gateway:
+    image: <REGISTRY>/p-erp/gateway:1.0.0
+    restart: unless-stopped
+    ports:
+      - "443:8443"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      APP_REDIS_HOST: redis
+    depends_on:
+      redis:
+        condition: service_healthy
+      erp-server:
+        condition: service_healthy
+
+  erp-server:
+    image: <REGISTRY>/p-erp/erp-server:1.0.0
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/p_erp
+      SPRING_DATASOURCE_USERNAME: ${DB_USER:-p_erp}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-<CHANGE_ME>}
+      SPRING_DATA_REDIS_HOST: redis
+      ROCKETMQ_NAME_SERVER: namesrv:9876
+      ES_URIS: http://elasticsearch:9200
+      MINIO_ENDPOINT: http://minio:9000
+      AI_SERVICE_URL: http://ai-service:8000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      namesrv:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 10
+
+  ai-service:
+    image: <REGISTRY>/p-erp/ai-service:1.0.0
+    restart: unless-stopped
+    environment:
+      MODEL_GATEWAY_URL: ${MODEL_GATEWAY_URL:-<CHANGE_ME>}
+      MODEL_API_KEY: ${MODEL_API_KEY:-<CHANGE_ME>}
+      PGVECTOR_DSN: postgresql://${DB_USER:-p_erp}:${DB_PASSWORD:-<CHANGE_ME>}@postgres:5432/p_erp
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: p_erp
+      POSTGRES_USER: ${DB_USER:-p_erp}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-<CHANGE_ME>}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-p_erp} -d p_erp"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7.2-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  namesrv:
+    image: apache/rocketmq:5.2.0
+    restart: unless-stopped
+    command: sh mqnamesrv
+    volumes:
+      - namesrvdata:/home/rocketmq/logs
+
+  broker:
+    image: apache/rocketmq:5.2.0
+    restart: unless-stopped
+    command: sh mqbroker -n namesrv:9876
+    environment:
+      NAMESRV_ADDR: namesrv:9876
+    volumes:
+      - brokerdata:/home/rocketmq/store
+    depends_on:
+      - namesrv
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.0
+    restart: unless-stopped
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: -Xms1g -Xmx1g
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+
+  minio:
+    image: minio/minio:latest
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-<CHANGE_ME>}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - miniodata:/data
+
+volumes:
+  pgdata:
+  redisdata:
+  namesrvdata:
+  brokerdata:
+  esdata:
+  miniodata:

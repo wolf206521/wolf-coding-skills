@@ -1,0 +1,6 @@
+apiVersion: v2
+name: p-erp
+description: 印刷行业生成型 ERP —— 二期 K8s Helm Chart（骨架）
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

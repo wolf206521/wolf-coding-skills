@@ -1,0 +1,5 @@
+# pnpm workspace 定义（复制到目标项目根目录后，按需增删 app/package）
+# 依赖：pnpm >= 9
+packages:
+  - "apps/*"
+  - "packages/*"
